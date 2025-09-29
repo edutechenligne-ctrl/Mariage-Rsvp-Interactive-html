@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RSVP Mariage — Darnelle</title>
+<style>
+  body{font-family:Arial,sans-serif;background:#fdfdfd;margin:0;padding:20px;display:flex;justify-content:center;align-items:flex-start}
+  .card{background:#fff;padding:20px;border-radius:15px;box-shadow:0 5px 20px rgba(0,0,0,0.1);max-width:500px;width:100%}
+  h1{margin-top:0}
+  input, textarea, select, button{width:100%;padding:10px;margin-top:10px;border-radius:8px;border:1px solid #ccc;font-size:15px}
+  button{background:#2d6cdf;color:white;border:none;cursor:pointer;margin-top:15px}
+  button.secondary{background:#efefef;color:#222}
+  .hidden{display:none}
+  .preview{margin-top:15px;padding:12px;border:1px dashed #ccc;border-radius:10px;background:#f9f9f9}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>RSVP Mariage — Darnelle</h1>
+  <p>Entrez votre nom pour voir vos places réservées et vos invités autorisés.</p>
+
+  <input type="text" id="guestName" placeholder="Votre nom" />
+  <button id="checkBtn">Vérifier mes places</button>
+
+  <div id="reservationSection" class="hidden">
+    <p id="reservationInfo"></p>
+    <label>Votre choix :</label>
+    <select id="attendChoice">
+      <option value="YES">✅ YES, I will attend</option>
+      <option value="NO">❌ NO, unfortunately I won't</option>
+    </select>
+    <button id="submitBtn">Submit & Générer la carte PDF</button>
+  </div>
+
+  <div id="pdfPreview" class="hidden preview">
+    <h2 id="pdfTitle"></h2>
+    <p id="pdfGuests"></p>
+    <p id="pdfSeats"></p>
+    <p id="pdfEvent"></p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// Liste des invités autorisés (à compléter selon ta base réelle)
+const reservations = {
+  'Marie Joseph': ['Marie Joseph'],
+  'Jean Pierre': ['Jean Pierre','Lucie Pierre'],
+  'Lucie Pierre': ['Jean Pierre','Lucie Pierre'],
+  'Marc Antoine': ['Marc Antoine','Sophie Antoine','Paul Antoine']
+};
+
+const eventInfo = 'Mariage de Darnelle • Date: 20 Décembre 2025 • Heure: 16h00 • Lieu: Château de Darnelle • Table: 5';
+
+document.getElementById('checkBtn').addEventListener('click',()=>{
+  const name = document.getElementById('guestName').value.trim();
+  if(!name || !reservations[name]){alert('Nom non trouvé ou pas autorisé.'); return;}
+
+  const guests = reservations[name];
+  const seats = guests.length;
+
+  document.getElementById('reservationInfo').innerText = seats === 1 ?
+    `${name} — 1 Seat reserved` :
+    `${name} & invités — ${seats} Places réservées\n` + guests.join(', ');
+
+  document.getElementById('reservationSection').classList.remove('hidden');
+});
+
+document.getElementById('submitBtn').addEventListener('click',async()=>{
+  const name = document.getElementById('guestName').value.trim();
+  const guests = reservations[name];
+  const seats = guests.length;
+  const choice = document.getElementById('attendChoice').value;
+
+  document.getElementById('pdfTitle').innerText = `RSVP — Mariage de Darnelle`;
+  document.getElementById('pdfGuests').innerText = 'Invités: ' + guests.join(', ');
+  document.getElementById('pdfSeats').innerText = 'Places réservées: ' + seats;
+  document.getElementById('pdfEvent').innerText = `${eventInfo} • Votre choix: ${choice}`;
+
+  document.getElementById('pdfPreview').classList.remove('hidden');
+
+  // Générer PDF
+  const canvas = await html2canvas(document.getElementById('pdfPreview'),{scale:2});
+  const imgData = canvas.toDataURL('image/png');
+  const jsPDFModule = window.jspdf;
+  const pdf = new jsPDFModule.jsPDF({orientation:'portrait', unit:'px', format:[canvas.width,canvas.height]});
+  pdf.addImage(imgData,'PNG',0,0,canvas.width,canvas.height);
+  const safeName = name.replace(/[^a-zA-Z0-9-_ ]/g,'').replace(/\s+/g,'_');
+  pdf.save(`RSVP_Darnelle_${safeName}.pdf`);
+});
+</script>
+</body>
+</html>
